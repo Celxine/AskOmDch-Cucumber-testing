@@ -1,37 +1,33 @@
 package step.definitions;
 
 import dependency.injection.DriverFactory;
-import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import org.junit.Assert;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import pages.ContactPage;
 
-import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 
 public class ContactSteps {
 
     WebDriver driver = DriverFactory.getDriver();
-    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    ContactPage contactPage = new ContactPage(driver);
 
-    @Then("user should see the following contact details:")
-    public void verify_contact_details(DataTable dataTable) {
-        // Convert Data Table to List of Maps
-        List<Map<String, String>> data = dataTable.asMaps(String.class, String.class);
+    @Given("user submits the contact form with:")
+    public void user_submits_contact_form(io.cucumber.datatable.DataTable dataTable) {
 
-        String pageSource = driver.getPageSource();
+        Map<String, String> data = dataTable.asMap(String.class, String.class);
 
-        // Loop through the data and check if the text exists on the page
-        for (Map<String, String> row : data) {
-            String contentToCheck = row.get("Content");
+        contactPage.submitContactForm(
+                data.get("Name"),
+                data.get("Email"),
+                data.get("Message")
+        );
+    }
 
-            // Assert that the page contains the email or header text
-            Assert.assertTrue("Text not found on page: " + contentToCheck,
-                    pageSource.contains(contentToCheck));
-        }
+    @Then("user should see the message {string}")
+    public void verify_contact_success(String expectedMessage) {
+        Assert.assertEquals(expectedMessage, contactPage.getSuccessMessage());
     }
 }

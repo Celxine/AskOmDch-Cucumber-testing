@@ -1,8 +1,7 @@
 package step.definitions;
 
 import dependency.injection.DriverFactory;
-import io.cucumber.datatable.DataTable;
-import io.cucumber.java.en.And;
+import domainobjects.BillingDetails;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -11,75 +10,64 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
+import pages.CheckoutPage;
 import java.time.Duration;
-import java.util.List;
 
 public class CheckoutSteps {
 
     WebDriver driver = DriverFactory.getDriver();
+    CheckoutPage checkoutPage = new CheckoutPage(driver);
     WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
     @Given("user has added {string} to the cart")
-    public void user_has_added_product_to_cart(String productName) throws InterruptedException {
+    public void user_has_added_to_the_cart(String productName) {
         driver.get("https://askomdch.com/store");
 
-        WebElement searchField = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("woocommerce-product-search-field-0")));
-        searchField.sendKeys(productName);
-        driver.findElement(By.cssSelector("button[value='Search']")).click();
+        By addToCartBtn = By.xpath("//h2[normalize-space()='" + productName + "']/ancestor::li//a[contains(@class,'add_to_cart_button')]");
 
-        WebElement productTitle = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//h2[contains(@class, 'woocommerce-loop-product__title')]")));
-        productTitle.click();
+        WebElement btn = wait.until(ExpectedConditions.elementToBeClickable(addToCartBtn));
+        btn.click();
 
-        WebElement addToCartBtn = wait.until(ExpectedConditions.elementToBeClickable(By.name("add-to-cart")));
-        addToCartBtn.click();
-
-               Thread.sleep(5000);
+        By viewCartLink = By.cssSelector("a[title='View cart']");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(viewCartLink)).click();
     }
-    @And("user proceeds to the checkout page")
-    public void user_proceeds_to_checkout() {
-        driver.get("https://askomdch.com/checkout");
+
+    @Given("user proceeds to the checkout page")
+    public void user_proceeds_to_the_checkout_page() {
+
+        By proceedBtn = By.cssSelector(".checkout-button");
+        wait.until(ExpectedConditions.elementToBeClickable(proceedBtn)).click();
     }
 
     @When("user fills the billing details with valid data")
-    public void user_fills_billing_details() {
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("billing_first_name"))).sendKeys("Cole");
-        driver.findElement(By.id("billing_last_name")).sendKeys("Train");
+    public void user_fills_the_billing_details_with_valid_data() {
 
-        Select countrySelect = new Select(driver.findElement(By.id("billing_country")));
-        countrySelect.selectByVisibleText("United States (US)");
+        BillingDetails billing = new BillingDetails();
+        billing.setFirstName("Celine");
+        billing.setLastName("Test");
+        billing.setCountry("United States (US)");
+        billing.setAddress("123 Test Street");
+        billing.setCity("New York");
+        billing.setState("New York");
+        billing.setZip("10001");
 
-        driver.findElement(By.id("billing_address_1")).sendKeys("123 Test Street");
-        driver.findElement(By.id("billing_city")).sendKeys("Test City");
+        billing.setEmail("celine" + System.currentTimeMillis() + "@test.com");
 
-        try { Thread.sleep(2000);
-        } catch (InterruptedException e) {
-
-        }
-        Select stateSelect = new Select(driver.findElement(By.id("billing_state")));
-        stateSelect.selectByVisibleText("California");
-
-        driver.findElement(By.id("billing_postcode")).sendKeys("90210");
-        driver.findElement(By.id("billing_email")).sendKeys("cole.train@example.com");
+        checkoutPage.setBillingDetails(billing);
     }
 
-    @And("user places the order")
+    @When("user places the order")
     public void user_places_the_order() {
-        try { Thread.sleep(3000); } catch (InterruptedException e) {}
-        WebElement placeOrderBtn = driver.findElement(By.id("place_order"));
-        try {
-            placeOrderBtn.click();
-        } catch (Exception e) {
-            ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", placeOrderBtn);
-        }
+        checkoutPage.placeOrder();
     }
 
     @Then("the {string} message should be displayed")
-    public void verify_success_message(String expectedMessage) {
-        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), expectedMessage));
-        boolean isPresent = driver.getPageSource().contains(expectedMessage);
-        Assert.assertTrue("Success message not found!", isPresent);
+    public void the_message_should_be_displayed(String expectedMessage) {
+
+        By successMessage = By.cssSelector(".woocommerce-notice");
+        String actualText = wait.until(ExpectedConditions.visibilityOfElementLocated(successMessage)).getText();
+
+        Assert.assertEquals(expectedMessage, actualText);
     }
 }

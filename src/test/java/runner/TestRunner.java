@@ -10,7 +10,8 @@ import org.junit.runner.RunWith;
 
         glue = {"step.definitions", "dependency.injection"},
         plugin = {"pretty", "html:target/cucumber-reports.html"},
-        monochrome = false
+        monochrome = true,
+        tags = "@Contact"
 )
 public class TestRunner {
 

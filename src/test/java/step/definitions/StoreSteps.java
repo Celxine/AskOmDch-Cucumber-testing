@@ -11,7 +11,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
 import java.time.Duration;
 
 public class StoreSteps {
@@ -29,22 +28,27 @@ public class StoreSteps {
         driver.findElement(By.linkText(category)).click();
     }
 
-
     @Then("the {string} page should be displayed")
     public void verify_category_page_displayed(String pageName) {
-        String expectedUrlPart = "";
-        if (pageName.equals("Women's Category")) {
-            expectedUrlPart = "product-category/women";
-        } else if (pageName.equals("Men's Category")) {
-            expectedUrlPart = "product-category/men";
+
+        String urlPart = "";
+
+        if(pageName.toLowerCase().contains("women")) {
+            urlPart = "product-category/women";
+        } else if (pageName.toLowerCase().contains("men")) {
+            urlPart = "product-category/men";
+        } else {
+            urlPart = "product-category";
         }
-        wait.until(ExpectedConditions.urlContains(expectedUrlPart));
+
+        wait.until(ExpectedConditions.urlContains(urlPart));
         String currentUrl = driver.getCurrentUrl();
-        Assert.assertTrue("Wrong page loaded! Expected URL to contain: " + expectedUrlPart, currentUrl.contains(expectedUrlPart));
+        Assert.assertTrue("Expected URL to contain: " + urlPart, currentUrl.contains(urlPart));
     }
 
     @When("user searches for {string} in the sidebar")
     public void user_searches_sidebar(String query) {
+
         WebElement searchBox = driver.findElement(By.id("woocommerce-product-search-field-0"));
         searchBox.clear();
         searchBox.sendKeys(query);
@@ -56,17 +60,24 @@ public class StoreSteps {
         WebElement sortDropdown = driver.findElement(By.className("orderby"));
         Select select = new Select(sortDropdown);
         select.selectByVisibleText(sortOption);
+
         wait.until(ExpectedConditions.urlContains("orderby"));
     }
 
     @Then("the first product should be {string}")
     public void verify_first_product(String expectedProduct) {
-        WebElement firstProduct = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//h2[contains(@class,'woocommerce-loop-product__title')])[1]")));
+
+        WebElement firstProduct = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("(//h2[contains(@class,'woocommerce-loop-product__title')])[1]")));
         Assert.assertEquals(expectedProduct, firstProduct.getText());
     }
+
     @Then("the product {string} should be visible")
     public void verify_product_visible(String productName) {
-        boolean isVisible = wait.until(ExpectedConditions.textToBePresentInElementLocated(By.tagName("body"), productName));
+        boolean isVisible = wait.until(ExpectedConditions.textToBePresentInElementLocated(
+                By.tagName("body"), productName
+        ));
         Assert.assertTrue("Product " + productName + " not found!", isVisible);
     }
 }
